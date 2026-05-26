@@ -1,5 +1,7 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import started from 'electron-squirrel-startup';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -7,11 +9,31 @@ if (started) {
   app.quit();
 }
 
+ipcMain.handle('fs:listDir', async (_, dirPath: string) => {
+  try {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    return entries.map(entry => ({
+      name: entry.name,
+      isDirectory: entry.isDirectory(),
+      path: path.join(dirPath, entry.name),
+      size: 0,
+      mtime: Date.now()
+    }));
+  } catch (error) {
+    console.error('Failed to list directory:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('fs:getHomeDir', () => {
+  return os.homedir();
+});
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -27,7 +49,7 @@ const createWindow = () => {
   }
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -51,6 +73,3 @@ app.on('activate', () => {
     createWindow();
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
