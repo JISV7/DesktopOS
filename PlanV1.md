@@ -1,3 +1,14 @@
+I just ran the command “npx create-electron-app@latest DesktopOS --template=vite-typescript”
+What I want to build is a desktop operating system.
+An Electron-based simulation that includes a calculator, calendar, file manager, camera, terminal, music player, etc.
+The windows should be draggable, resizable, closable, and able to be maximized or minimized.
+It can be similar to macOS; I don’t mind what aesthetics or colors you use.
+As of May 26, 2026.
+What architecture do you recommend for organizing the code and files?
+I need you to generate the initial files; remember to work in a modular, maintainable, and extensible way.
+Later, I need you to generate the interface and every single application I request in their entirety; I don’t want half-baked implementations.
+
+This is my package.json. In case you need to install any other libraries.
 {
   "name": "desktopos",
   "productName": "desktopos",
@@ -29,28 +40,16 @@
     "@electron-forge/plugin-vite": "^7.11.2",
     "@electron/fuses": "^1.8.0",
     "@types/electron-squirrel-startup": "^1.0.2",
-    "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "@vitejs/plugin-react": "^4.7.0",
-    "autoprefixer": "^10.5.0",
     "electron": "42.2.0",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
-    "postcss": "^8.5.15",
-    "tailwindcss": "^4.3.0",
     "typescript": "~4.5.4",
     "vite": "^5.4.21"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
     "electron-squirrel-startup": "^1.0.1",
-    "framer-motion": "^12.40.0",
-    "lucide-react": "^1.16.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "tailwind-merge": "^3.6.0",
-    "zustand": "^5.0.13"
+    "lucide-react": "^1.16.0"
   }
 }
