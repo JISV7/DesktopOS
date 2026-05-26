@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useDragControls } from 'framer-motion';
 import { WindowInstance } from '../types/os';
 import { X, Minus, Maximize2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -25,23 +25,28 @@ export const Window: React.FC<WindowProps> = ({
   children 
 }) => {
   const isMaximized = window.state === 'maximized';
+  const isMinimized = window.state === 'minimized';
+  const dragControls = useDragControls();
 
   return (
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ 
-        scale: 1, 
-        opacity: 1,
+        scale: isMinimized ? 0.5 : 1, 
+        opacity: isMinimized ? 0 : 1,
         x: isMaximized ? 0 : window.position.x,
         y: isMaximized ? 0 : window.position.y,
         width: isMaximized ? '100%' : window.size.width,
         height: isMaximized ? 'calc(100% - 32px)' : window.size.height,
         top: isMaximized ? '32px' : 0,
         left: isMaximized ? 0 : 0,
+        pointerEvents: isMinimized ? 'none' : 'auto',
       }}
       exit={{ scale: 0.9, opacity: 0 }}
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      drag={!isMaximized}
+      drag={!isMaximized && !isMinimized}
+      dragControls={dragControls}
+      dragListener={false}
       dragMomentum={false}
       onDragStart={() => onFocus(window.id)}
       onDragEnd={(_, info) => {
@@ -52,18 +57,18 @@ export const Window: React.FC<WindowProps> = ({
           } 
         });
       }}
-      onMouseDown={() => onFocus(window.id)}
+      onMouseDown={() => !isMinimized && onFocus(window.id)}
       className={cn(
         "absolute flex flex-col overflow-hidden shadow-2xl border border-white/10",
         isMaximized ? "rounded-none" : "rounded-lg",
         window.isFocused ? "bg-os-bg/95 backdrop-blur-2xl" : "bg-os-bg/80 backdrop-blur-xl opacity-90",
-        "pointer-events-auto"
       )}
       style={{ zIndex: window.zIndex }}
     >
       {/* Title Bar */}
       <div 
         className="h-9 bg-white/5 flex items-center px-3 gap-4 select-none cursor-default"
+        onPointerDown={(e) => dragControls.start(e)}
         onDoubleClick={() => onUpdate(window.id, { state: isMaximized ? 'normal' : 'maximized' })}
       >
         <div className="flex gap-2 group">

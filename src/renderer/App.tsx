@@ -56,7 +56,7 @@ const App: React.FC = () => {
         
         {/* Windows */}
         <AnimatePresence>
-          {windows.filter(w => w.state !== 'minimized').map(win => {
+          {windows.map(win => {
             const appDef = APPS.find(a => a.id === win.appId);
             const AppComponent = appDef?.component || (() => <div>App not found</div>);
             

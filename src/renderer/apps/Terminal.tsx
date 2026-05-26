@@ -9,7 +9,6 @@ interface TerminalLine {
 const Terminal: React.FC<{ window: WindowInstance }> = () => {
   const [lines, setLines] = useState<TerminalLine[]>([
     { type: 'output', content: 'Welcome to DesktopOS Terminal v1.0.0' },
-    { type: 'output', content: 'Type "help" to see available commands.' },
   ]);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
@@ -17,7 +16,15 @@ const Terminal: React.FC<{ window: WindowInstance }> = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [cwd, setCwd] = useState('~');
+  const [cwd, setCwd] = useState('');
+
+  useEffect(() => {
+    async function init() {
+      const home = await window.electron.fs.getHomeDir();
+      setCwd(home);
+    }
+    init();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -25,61 +32,47 @@ const Terminal: React.FC<{ window: WindowInstance }> = () => {
     }
   }, [lines]);
 
-  const handleCommand = (cmd: string) => {
+  const handleCommand = async (cmd: string) => {
     const trimmedCmd = cmd.trim();
     if (!trimmedCmd) return;
 
     setLines(prev => [...prev, { type: 'input', content: `${cwd} $ ${trimmedCmd}` }]);
     setHistory(prev => [trimmedCmd, ...prev]);
     setHistoryIndex(-1);
-
-    const [base, ...args] = trimmedCmd.toLowerCase().split(' ');
-
-    let output = '';
-    let type: 'output' | 'error' = 'output';
-
-    switch (base) {
-      case 'help':
-        output = 'Available commands: help, clear, ls, cd, cat, whoami, date, echo, exit';
-        break;
-      case 'clear':
-        setLines([]);
-        setInput('');
-        return;
-      case 'ls':
-        output = 'Documents  Downloads  Pictures  Music  Desktop  Public';
-        break;
-      case 'cd':
-        if (!args[0] || args[0] === '~') {
-          setCwd('~');
-        } else {
-          setCwd(`~/${args[0]}`);
-        }
-        break;
-      case 'whoami':
-        output = 'jisv7';
-        break;
-      case 'date':
-        output = new Date().toString();
-        break;
-      case 'echo':
-        output = args.join(' ');
-        break;
-      case 'cat':
-        output = args[0] ? `Content of ${args[0]}: This is a simulated file content.` : 'Usage: cat <filename>';
-        break;
-      case 'exit':
-        output = 'Terminal session ended. You can close this window.';
-        break;
-      default:
-        output = `Command not found: ${base}`;
-        type = 'error';
-    }
-
-    if (output) {
-      setLines(prev => [...prev, { type, content: output }]);
-    }
     setInput('');
+
+    if (trimmedCmd.toLowerCase() === 'clear') {
+      setLines([]);
+      return;
+    }
+
+    if (trimmedCmd.toLowerCase().startsWith('cd ')) {
+      const newPath = trimmedCmd.slice(3).trim();
+      // Simple path resolution (could be more robust)
+      let resolvedPath = newPath;
+      if (newPath === '~') resolvedPath = await window.electron.fs.getHomeDir();
+      
+      try {
+        // Test if directory exists by listing it
+        await window.electron.fs.listDir(resolvedPath);
+        setCwd(resolvedPath);
+      } catch (err) {
+        setLines(prev => [...prev, { type: 'error', content: `cd: no such directory: ${newPath}` }]);
+      }
+      return;
+    }
+
+    try {
+      const result = await window.electron.shell.execute(trimmedCmd, cwd);
+      if (result.stdout) {
+        setLines(prev => [...prev, { type: 'output', content: result.stdout }]);
+      }
+      if (result.stderr) {
+        setLines(prev => [...prev, { type: 'error', content: result.stderr }]);
+      }
+    } catch (err: any) {
+      setLines(prev => [...prev, { type: 'error', content: err.message }]);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

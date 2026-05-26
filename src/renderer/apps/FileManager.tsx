@@ -36,21 +36,27 @@ const FileManager: React.FC<{ window: WindowInstance }> = () => {
     loadDir(path);
   };
 
+  const handleFileClick = async (entry: ElectronFile) => {
+    if (entry.isDirectory) {
+      navigateTo(entry.path);
+    } else {
+      await window.electron.fs.openFile(entry.path);
+    }
+  };
+
   const sidebarItems = [
-    { name: 'Home', icon: Home, path: 'home' },
+    { name: 'Home', icon: Home, path: '' },
     { name: 'Documents', icon: FileText, path: 'Documents' },
     { name: 'Downloads', icon: Download, path: 'Downloads' },
     { name: 'Pictures', icon: ImageIcon, path: 'Pictures' },
     { name: 'Music', icon: MusicIcon, path: 'Music' },
+    { name: 'Desktop', icon: ImageIcon, path: 'Desktop' },
   ];
 
   const handleSidebarClick = async (item: typeof sidebarItems[0]) => {
     const home = await window.electron.fs.getHomeDir();
-    if (item.path === 'home') {
-      navigateTo(home);
-    } else {
-      navigateTo(`${home}/${item.path}`);
-    }
+    const targetPath = item.path ? `${home}/${item.path}` : home;
+    navigateTo(targetPath);
   };
 
   const pathParts = currentPath.split(/[/\\]/).filter(Boolean);
@@ -95,7 +101,7 @@ const FileManager: React.FC<{ window: WindowInstance }> = () => {
               {entries.map(entry => (
                 <div 
                   key={entry.path}
-                  onDoubleClick={() => entry.isDirectory && navigateTo(entry.path)}
+                  onDoubleClick={() => handleFileClick(entry)}
                   className="flex flex-col items-center gap-2 p-2 rounded-xl hover:bg-white/10 transition-all group cursor-default"
                 >
                   <div className="w-12 h-12 flex items-center justify-center relative">
